@@ -64,6 +64,5 @@ void abraham(){
 
 int main(){
     abraham();
-    wait(NULL);
-    exit(EXIT_SUCCESS);
+    return 0;
 }
