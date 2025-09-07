@@ -1,0 +1,31 @@
+# Archivos de compilación
+*.o
+*.out
+*.exe
+*.a
+*.so
+*.lo
+*.la
+
+# Archivos de depuración
+*.gch
+*.swp
+*.swo
+*.log
+
+# Archivos temporales
+*~
+*.tmp
+
+# Carpetas de build
+/build/
+/bin/
+/obj/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
