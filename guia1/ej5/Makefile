@@ -1,26 +1,20 @@
-# Compilador
 CC = gcc
-
-# Opciones de compilación
-CFLAGS = -Wall -Wextra -g
-
-# Nombre del ejecutable
+CFLAGS = -Wall -Wextra -O2
+BIN_DIR = bin
+OBJ_DIR = build
 TARGET = ej5
 
-# Busca automáticamente todos los .c del directorio
-SRCS = $(wildcard *.c)
+SRC = ej5.c
+OBJ = $(OBJ_DIR)/ej5.o
 
-# Convierte cada .c en su .o correspondiente
-OBJS = $(SRCS:.c=.o)
+$(BIN_DIR)/$(TARGET): $(OBJ)
+	mkdir -p $(BIN_DIR)
+	$(CC) $(OBJ) -o $@
 
-# Regla principal
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
-
-# Regla genérica para compilar cada .c en .o
-%.o: %.c
+$(OBJ_DIR)/%.o: %.c
+	mkdir -p $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Limpiar archivos
+.PHONY: clean
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -rf $(OBJ_DIR) $(BIN_DIR)
