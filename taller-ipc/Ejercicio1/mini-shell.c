@@ -5,33 +5,51 @@
 #include <string.h>
 #include "constants.h"
 #include "mini-shell-parser.c"
+#include <stdbool.h>
 
+void redirigirStandars(int pipes[][2], int count_proc, int indice_proc){
+	// Redirecciono la entrada estandar al extremo de lectura del pipe a izquierda (salvo si es el primer programa)
+	bool es_primer_proc = (indice_proc == 0);
+	bool es_ultimo_proc = (indice_proc == count_proc - 1);
+	
+	if(!es_primer_proc){	
+		int pipe_a_izquierda = indice_proc - 1;
+		dup2(pipes[pipe_a_izquierda][PIPE_READ], STD_INPUT);	
+	}
+	// Redirecciono la salida estandar al extremo de escritura del pipe a derecha (salvo si es el ultimo programa)
+	if(!es_ultimo_proc){
+		int pipe_a_derecha = indice_proc;
+		dup2(pipes[pipe_a_derecha][PIPE_WRITE], STD_OUTPUT);	
+	}
+}
 
-int programa_hijo(char ***progs, int i, size_t count, int pipes[][2]){
-	// Si es el primer programa, solo redirecciono la salida estandar al pipe a la derecha ##############	CREO QUE ESTA ##############
-	// Si es el ultimo programa, solo redirecciono la entrada estandar al pipe a la izquierda ############## CREO QUE ESTA ##############
-	// Si es un programa intermedio, redirecciono la entrada estandar al pipe a la izquierda y la salida estandar al pipe a la derecha
-
-	// Cierro los pipes que no son del iesimo proceso y redirecciono los que si 
-	for(int j = 0; j < count - 1; j++){
-		if(j == i - 1){
-			close(pipes[j][PIPE_WRITE]);			// Cierro el extremo de escritura del pipe a izquierda
-			dup2(pipes[j][PIPE_READ], STD_INPUT);	// Redirecciono la entrada estandar al extremo de lectura del pipe a izquierda
-			//printf("Soy [%s], mi pid es [%d], redirijo el STDINPUT a pipe[%d]\n", progs[i][0],getpid(), j);
+void cerrarPipes(int pipes[][2], int count_proc, int indice_proc){
+	// PREGUNTA: Estoy cerrando todos, incluso los que voy a usar, pues ya hice el dup2?
+	// Esta bien o hay q dejarlo abierto?
+	int pipe_a_izquierda = indice_proc - 1;
+	int pipe_a_derecha = indice_proc;
+	int cant_pipes = count_proc - 1;
+	for(int i = 0; i < cant_pipes; i++){
+		bool es_pipe_der = (i == pipe_a_derecha);
+		bool es_pipe_izq = (i == pipe_a_izquierda);
+		bool es_primer_proc = (indice_proc == 0);
+		bool es_ultimo_proc = (indice_proc == count_proc - 1);
+		if(!es_pipe_izq || !es_primer_proc){	// Evitar el caso del primer proceso (no tiene pipe a izq)
+			close(pipes[i][PIPE_READ]);	
 		}
-		else if(j == i){
-			close(pipes[j][PIPE_READ]);				// Cierro el extremo de lectura del pipe a derecha
-			//printf("Soy [%s], redirijo el STDOUTPUT a pipe[%d]\n", progs[i][0], j);
-			dup2(pipes[j][PIPE_WRITE], STD_OUTPUT);	// Redirecciono la salida estandar al extremo de escritura del pipe a derecha
-			//printf("LLEGUE A DUP2\n");
-		}
-		else{
-			// Cierro ambos extremos de los demas pipes
-			close(pipes[j][PIPE_READ]);				
-			close(pipes[j][PIPE_WRITE]);
+		if(!es_pipe_der || !es_ultimo_proc){	// Evitar el caso del ultimo proceso (no tiene pipe a der)
+			close(pipes[i][PIPE_WRITE]);
 		}
 	}
-	execvp(progs[i][0], progs[i]);
+}
+
+int programa_hijo(char ***progs, int indice_proc, size_t count, int pipes[][2]){
+	// Redirijo los standars y cierro los pipes que no uso
+	redirigirStandars(pipes, count, indice_proc);
+	cerrarPipes(pipes, count, indice_proc);
+
+	// Ejecuto el programa
+	execvp(progs[indice_proc][0], progs[indice_proc]);
 	exit(EXIT_FAILURE); // Si execvp falla
 }
 
@@ -39,8 +57,7 @@ int programa_hijo(char ***progs, int i, size_t count, int pipes[][2]){
 static int run(char ***progs, size_t count)
 {	
 	int r, status;
-	//printf("El pid padre es [%d]\n", getpid());
-
+	
 	//Reservo memoria para el arreglo de pids
 	pid_t *children = malloc(sizeof(*children) * count);
 
@@ -52,6 +69,7 @@ static int run(char ***progs, size_t count)
 			exit(EXIT_FAILURE);
 		}
 	}
+
 	// Necesito count procesos, uno para cada programa a ejecutar
 	for (int i = 0; i < count; i++){
 		// Creo el i-esimo proceso
@@ -59,8 +77,10 @@ static int run(char ***progs, size_t count)
 		if (children[i] == -1) exit(EXIT_FAILURE);
 		else if (children[i] == 0) programa_hijo(progs, i, count, pipes); // El proceso necesita saber que programa es y que pipe le corresponde
 	}
+	
 	// El padre cierra los pipes, pues no los va a usar. Hay que cerrarlos despues del for, porque si no los hijos heredan los descriptores cerrados
-	for (int i = 0; i < count; i++){
+	int cant_pipes = count - 1;
+	for (int i = 0; i < cant_pipes; i++){
 		close(pipes[i][PIPE_WRITE]);
 		close(pipes[i][PIPE_READ]);
 	}
