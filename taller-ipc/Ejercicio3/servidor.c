@@ -96,25 +96,26 @@ int main() {
 
 void servidor_hijo() {
     while(1) {
-    // Primero el cliente le manda el tamaño de la expresion
-    int expr_size;
-    if (recv(client_socket, &expr_size, sizeof(int), 0) == 0) {
-        // El cliente cerro la conexion
-        printf("El cliente cerró la conexión. Terminando el servidor hijo.\n");
-        exit(EXIT_SUCCESS);
-    }
+        // Primero el cliente le manda el tamaño de la expresion
+        int expr_size;
+        if (recv(client_socket, &expr_size, sizeof(int), 0) == 0) {
+            // El cliente cerro la conexion
+            printf("El cliente cerró la conexión. Terminando el servidor hijo.\n");
+            exit(EXIT_SUCCESS);
+        }
 
-    // Luego el cliente le manda la expresion
-    char expression[expr_size + 1]; // +1 para el '\0'
-    if (recv(client_socket, expression, expr_size, 0) == 0) {
-        // El cliente cerro la conexion
-        printf("El cliente cerró la conexión. Terminando el servidor hijo.\n");
-        exit(EXIT_SUCCESS);
-    }                
-    expression[expr_size] = '\0';  // Aseguramos que la cadena esté terminada en null
-
-    int result = calcular(expression);
-    printf("El resultado de la expresión %s es: %d\n", expression, result);
-    // Al finalizar se queda esperando si llega otra expresión.
+        // Luego el cliente le manda la expresion
+        char expression[expr_size + 1]; // +1 para el '\0'
+        if (recv(client_socket, expression, expr_size, 0) == 0) {
+            // El cliente cerro la conexion
+            printf("El cliente cerró la conexión. Terminando el servidor hijo.\n");
+            exit(EXIT_SUCCESS);
+        }                
+        expression[expr_size] = '\0';  // Aseguramos que la cadena esté terminada en null
+        
+        int result = calcular(expression);
+        printf("Servidor calculó la expresión y envía el resultado al cliente.\n");
+        send(client_socket, &result, sizeof(int), 0);
+        // Al finalizar se queda esperando si llega otra expresión.
     }
 }
