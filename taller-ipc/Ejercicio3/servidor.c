@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+void servidor_hijo();
+
 int calcular(const char *expresion) {
     int num1, num2, resultado;
     char operador;
@@ -43,13 +45,76 @@ int calcular(const char *expresion) {
     return resultado;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int client_socket;  // PREGUNTAR: Lo pongo global para que lo pueda usar el hijo. Por convencion se hace asi o pasandoselo como parametro??
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 int main() {
-     
-    // COMPLETAR. Este es un ejemplo de funcionamiento básico.
-    // La expresión debe ser recibida como un mensaje del cliente hacia el servidor.
-    const char *expresion = "10+5";  
-    int resultado = calcular(expresion);
-    printf("El resultado de la operación es: %d\n", resultado);
+    int server_socket;
+    struct sockaddr_un client_addr;
+    struct sockaddr_un server_addr;
+    socklen_t clen = sizeof(client_addr);
+    socklen_t slen = sizeof(server_addr);
+
+    server_addr.sun_family = AF_UNIX;
+    strcpy(server_addr.sun_path, "unix_socket");
+    unlink(server_addr.sun_path);
+
+    // Creo el socket
+    server_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    // Asigno la direccion del socket (el archivo "unix_socket")
+    if (bind(server_socket, (struct sockaddr *)&server_addr, slen) == -1) {
+        perror("Error");
+        exit(EXIT_FAILURE);
+    }
+
+    // Escucho conexiones
+    if (listen(server_socket, 5) == -1) {
+        perror("Error");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Servidor esperando que se conecte algun cliente...\n");
+    while(1) {
+        // Si recibo un cliente, creo un proceso hijo para atenderlo
+        client_socket = accept(server_socket, (struct sockaddr *) &client_addr, &clen);
+        pid_t pid_hijo = fork();
+        if (pid_hijo == 0) {
+            servidor_hijo();
+        }
+        close(client_socket); // El padre cierra el socket del cliente
+    }
     exit(0);
 }
 
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// PREGUNTAR: Deberia cerrar el server_socket?? El hijo ya no lo va a usar, pero lo hereda del padre.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void servidor_hijo() {
+    while(1) {
+    // Primero el cliente le manda el tamaño de la expresion
+    int expr_size;
+    if (recv(client_socket, &expr_size, sizeof(int), 0) == 0) {
+        // El cliente cerro la conexion
+        printf("El cliente cerró la conexión. Terminando el servidor hijo.\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    // Luego el cliente le manda la expresion
+    char expression[expr_size + 1]; // +1 para el '\0'
+    if (recv(client_socket, expression, expr_size, 0) == 0) {
+        // El cliente cerro la conexion
+        printf("El cliente cerró la conexión. Terminando el servidor hijo.\n");
+        exit(EXIT_SUCCESS);
+    }                
+    expression[expr_size] = '\0';  // Aseguramos que la cadena esté terminada en null
+
+    int result = calcular(expression);
+    printf("El resultado de la expresión %s es: %d\n", expression, result);
+    // Al finalizar se queda esperando si llega otra expresión.
+    }
+}
