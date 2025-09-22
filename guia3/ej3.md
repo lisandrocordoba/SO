@@ -1,0 +1,1 @@
+Utilizar una LIFO en vez de una FIFO para almacenar los procesos que esperan por un recurso compartido con wait() puede generar starvation, pues si constantemente llegan procesos nuevos, los viejos nunca van a poder acceder al recurso.
