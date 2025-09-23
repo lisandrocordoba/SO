@@ -1,7 +1,7 @@
 ## Caso a)
 
 ### Memoria compartida
-
+<s>
 Supongo que cada proceso sabe su numero id (de 0 a n-1).
 ```c
 permisoA = sem(1)
@@ -144,24 +144,29 @@ No puede haber inanicion. El flujo es el siguiente:
 - Vuelve a comenzar el ciclo, nunca un proceso queda esperando indefinidamente.
 
 
-## Caso c)
+## Caso d)
 
 ### Memoria compartida
 ```c
 permisoProductor = sem(1)
-permisoConsumidor = sem(0)
-turnoConsumidorB = sem(2)
-turnoConsumidorC = sem(1)
-cantidad_consumidores = 0
+permisoConsumidorB = sem(0)
+permisoConsumidorC = sem(0)
+turnoConsumidor = 'B';
 mutex = sem(1)   ## para proteger cantidad_consumidores
 ```
 
 ### A():
+
 ```c
 while(True){
     permisoProductor.wait()
         producir()
-        permisoConsumidor.signal()
+        if(turnoConsumidor == 'B')
+            turnoConsumidor = 'C'
+            permisoConsumidorC.signal()
+        else
+            turnoConsumidor = 'B'
+            permisoConsumidorB.signal()
 }
 ```
 
@@ -169,14 +174,16 @@ while(True){
 
 ```c
 while(True){
-    turnoConsumidorB.wait()
-    permisoConsumidor.wait()
+    permisoConsumidorB.wait()
         consumir()
         mutex.wait()
             cantidad_consumidores++
             if(cantidad_consumidores == 2){
                 cantidad_consumidores = 0
                 permisoProductor.signal()
+                permisoConsumidorC.signal()
+            } else {
+                permisoConsumidorB.signal()
             }
         mutex.signal()
 }
@@ -186,14 +193,10 @@ while(True){
 
 ```c
 while(True){
-    permisoConsumidor.wait()
+    permisoConsumidorC.wait()
         consumir()
-        mutex.wait()
-            cantidad_consumidores++
-            if(cantidad_consumidores == 2){
-                cantidad_consumidores = 0
-                permisoProductor.signal()
-            }
-        mutex.signal()
+        permisoProductor.signal()
+        permisoConsumidorB.signal()
 }
 ```
+ 
