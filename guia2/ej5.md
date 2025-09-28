@@ -10,4 +10,4 @@ Tambien puede aumentar mucho el tamaño de la cola.
 
 ### c)
 Para mantener las "prioridades" se podrian asignar quantums especificos para cada proceso.
-Para eliminar el tamaño de la cola se podria guardarse una tupla (proceso, cantidad_de_veces) y al momento de desencolar simplemente se reduce la cantidad_de_veces en 1. Si llega a 0 se elimina de la cola.
+Para eliminar el tamaño de la cola podria guardarse una tupla (proceso, cantidad_de_veces) y al momento de desencolar simplemente se reduce la cantidad_de_veces en 1. Si llega a 0 se elimina de la cola.
