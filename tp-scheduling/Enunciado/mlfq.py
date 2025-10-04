@@ -152,7 +152,7 @@ if options.jlist != '':
         job[jobCnt] = {'currPri':hiQueue, 'ticksLeft':quantum[hiQueue],
                        'allotLeft':allotment[hiQueue], 'startTime':startTime,
                        'runTime':runTime, 'timeLeft':runTime, 'ioFreq':ioFreq, 'doingIO':False,
-                       'firstRun':-1}
+                       'firstRun':-1, 'waitingTime':0}
         if startTime not in ioDone:
             ioDone[startTime] = []
         ioDone[startTime].append((jobCnt, 'JOB BEGINS'))
@@ -167,7 +167,7 @@ else:
         job[jobCnt] = {'currPri':hiQueue, 'ticksLeft':quantum[hiQueue],
                        'allotLeft':allotment[hiQueue], 'startTime':startTime,
                        'runTime':runTime, 'timeLeft':runTime, 'ioFreq':ioFreq, 'doingIO':False,
-                       'firstRun':-1}
+                       'firstRun':-1, 'waitingTime':0}
         if startTime not in ioDone:
             ioDone[startTime] = []
         ioDone[startTime].append((jobCnt, 'JOB BEGINS'))
@@ -218,6 +218,8 @@ currTime = 0
 # use these to know when we're finished
 totalJobs    = len(job)
 finishedJobs = 0
+currentThroughput = 0
+
 
 print('\nExecution Trace:\n')
 
@@ -292,6 +294,17 @@ while finishedJobs < totalJobs:
     if timeLeft < 0:
         Abort('Error: should never have less than 0 time left to run')
 
+    # Print current throughput every two time units
+    if(currTime > 0 and currTime % 2 == 0):
+        currentThroughput = finishedJobs / currTime
+        print('-- Throughput at time %d: %.4f ( %d jobs in %d time )' % (currTime, currentThroughput, finishedJobs,  currTime))
+
+    # Update waiting time for all jobs in the queues
+    for j in range(numJobs):
+        jobAvailable = job[j]['startTime'] <= currTime and job[j]["timeLeft"] > 0
+        isReadyAndNotRunning = j != currJob and jobAvailable and job[j]["doingIO"] == False
+        if isReadyAndNotRunning:
+            job[j]["waitingTime"] += 1
 
     # UPDATE TIME
     currTime += 1
@@ -364,12 +377,16 @@ print('')
 print('Final statistics:')
 responseSum   = 0
 turnaroundSum = 0
+waitingSum    = 0
 for i in range(numJobs):
     response   = job[i]['firstRun'] - job[i]['startTime']
     turnaround = job[i]['endTime'] - job[i]['startTime']
-    print('  Job %2d: startTime %3d - response %3d - turnaround %3d' % (i, job[i]['startTime'], response, turnaround))
+    waiting    = job[i]['waitingTime']
+    print('  Job %2d: startTime %3d - response %3d - turnaround %3d - waiting %3d' % (i, job[i]['startTime'], response, turnaround, waiting))
     responseSum   += response
     turnaroundSum += turnaround
+    waitingSum    += waiting
 
-print('\n  Avg %2d: startTime n/a - response %.2f - turnaround %.2f' % (i, float(responseSum)/numJobs, float(turnaroundSum)/numJobs))
+print('\n  Avg %2d: startTime n/a - response %.2f - turnaround %.2f - waiting %.2f' % (i, float(responseSum)/numJobs, float(turnaroundSum)/numJobs, float(waitingSum)/numJobs))
+print(' Final throughput: %.4f ( %d jobs in %d time )' % (float(finishedJobs)/currTime, finishedJobs, currTime))
 print('\n')

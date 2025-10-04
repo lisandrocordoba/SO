@@ -11,5 +11,5 @@ No puede producir starvation pues los procesos se ejecutan hasta su finalizació
 ### f) Multilevel Queue
 Al utilizar prioridad, puede producir starvation si constantemente llegan procesos de alta prioridad.
 ### g) Multilevel Feedback Queue (aging)
-No hay starvation entre colas pues utiliza aging, lo que hace que los procesos que llevan mucho tiempo esperando vayan aumentando dependiendo el criterio dentro de cada cola puede haber starvation.  
+No hay starvation entre colas pues utiliza aging, lo que hace que los procesos que llevan mucho tiempo esperando vayan aumentando. 
 Sin embargo, dependiendo el criterio que se utilice dentro de cada cola, puede haber starvation. Por ejemplo, si en la de maxima prioridad se utiliza SJF y constantemente llegan procesos con bajo tiempo de ejecución, puede haber procesos de maxima prioridad que no se ejecuten nunca.
