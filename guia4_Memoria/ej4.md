@@ -1,0 +1,2 @@
+Un page fault se produce cuando un proceso intenta acceder a una direccion virtual cuya página fisica no está cargada actualmente en memoria principal.  
+El SO debe atender la interrupcion, localizar la página en disco, cargarla en memoria (desalojando otra si es necesario) y actualizar las tablas de páginas.
