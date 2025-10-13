@@ -11,17 +11,29 @@
 static int upper_bound = -1;
 
 static ssize_t azar_read(struct file *filp, char __user *data, size_t size, loff_t *offset) {
-    
-    /* Completar */
-    
-    return -EPERM;
+    printk(KERN_ALERT "upper: %d", upper_bound);
+    if(upper_bound == -1) return -EPERM;
+    char* string_res = kmalloc(sizeof(char) * size, NULL);
+    unsigned int num_azar;
+    get_random_bytes(&num_azar, sizeof(num_azar));
+    num_azar = num_azar % upper_bound;
+    int size_string = snprintf(string_res, size, "%d\n", num_azar);
+    copy_to_user(data, string_res, size_string);
+    int res_size = sizeof(string_res);
+    kfree(string_res);
+    return size;
 }
 
 static ssize_t azar_write(struct file *filp, const char __user *data, size_t size, loff_t *offset) {
-    
-    /* Completar */
-    
-    return -EPERM;
+    int res = size;
+    char* to = kmalloc(sizeof(char) * size + 1, NULL);
+    copy_from_user(to, data, size);
+    to[size] = 0;
+    if(kstrtoint(to, 10, &upper_bound) != 0) {
+        res = -EPERM;
+    }
+    kfree(to);
+    return res;
 }
 
 static struct file_operations azar_fops = {
