@@ -1,3 +1,4 @@
+# Ejercico 1
 No contamos con memoria cache y la FAT no queda almacenada en memoria.
 Suponiendo que sabemos el primer bloque del archivo, debemos:
 - Traer del disco ese bloque
